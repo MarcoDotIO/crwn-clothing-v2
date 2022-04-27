@@ -1,5 +1,7 @@
 import { createContext, useReducer } from 'react';
 
+import { createAction } from '../utils/react/reducer.utils';
+
 const addCartItem = (cartItems, productToAdd) => {
     const existingCartItem = cartItems.find(
         cartItem => cartItem.id === productToAdd.id
@@ -95,21 +97,15 @@ export const CartProvider = ({ children }) => {
             0
         );
 
-        dispatch({ 
-            type: CART_ACTION_TYPES.SET_CART_ITEMS, 
-            payload: { 
-                cartItems: newCartItems, 
-                cartTotal: newCartTotal, 
-                cartAmount: newCartAmount 
-            } 
-        });
+        dispatch(createAction(CART_ACTION_TYPES.SET_CART_ITEMS, {
+            cartItems: newCartItems,
+            cartTotal: newCartTotal,
+            cartAmount: newCartAmount 
+        }));
     };
 
     const setCartReducer = cartState => {
-        dispatch({
-            type: CART_ACTION_TYPES.SET_CART_STATE,
-            payload: cartState
-        });
+        dispatch(createAction(CART_ACTION_TYPES.SET_CART_STATE, cartState));
     };
 
     const addItemToCart = productToAdd => {
