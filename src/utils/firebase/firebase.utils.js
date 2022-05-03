@@ -7,7 +7,8 @@ import {
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword, 
     signOut, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    getRedirectResult
 } from 'firebase/auth';
 
 import { 
@@ -34,6 +35,8 @@ const userCollectionName = 'users';
 const categoriesCollection = 'categories';
 
 const firebaseApp = initializeApp(firebaseConfig);
+
+process.env.NODE_ENV === 'development' && console.log(firebaseApp);
 
 const provider = new GoogleAuthProvider();
 
@@ -65,17 +68,13 @@ export const getCategoriesAndDocuments = async () => {
     const q = query(collectionRef);
 
     const querySnapshot = await getDocs(q);
-    const categoryMap = querySnapshot.docs.reduce((acc, docSnapshot) => {
-        const { title, items } = docSnapshot.data();
-        const newTitle = title.toLowerCase();
-        acc[newTitle] = items;
-        return acc;
-    }, {});
-
-    return categoryMap;
+    return querySnapshot.docs.map(docSnapshot => docSnapshot.data());
 };
 
-export const createUserDocumentFromAuth = async (userAuth, otherAttributes = {}) => {
+export const createUserDocumentFromAuth = async (
+    userAuth,
+    additionalInformation = {}
+) => {
     if (!userAuth) return;
 
     const userDocRef = doc(db, userCollectionName, userAuth.uid);
@@ -91,14 +90,14 @@ export const createUserDocumentFromAuth = async (userAuth, otherAttributes = {})
                 displayName,
                 email,
                 createdAt,
-                ...otherAttributes
+                ...additionalInformation,
             });
         } catch (error) {
-            console.error(`ERR: ERROR CREATING THE USER ${error}`);
+            console.log('error creating the user', error.message);
         }
     }
 
-    return userDocRef;
+    return userSnapshot;
 };
 
 export const createAuthUserWithEmailAndPassword = async (email, password) => {
@@ -113,9 +112,24 @@ export const signInAuthUserWithEmailAndPassword = async (email, password) => {
     return await signInWithEmailAndPassword(auth, email, password);
 };
 
+export const signInAuthUserWithGoogleRedirect = async () => await getRedirectResult(auth);
+
 export const signOutUser = async () => await signOut(auth);
 
 export const onAuthStateChangedListener = callback => {
     if (!callback) return;
     return onAuthStateChanged(auth, callback);
 }
+
+export const getCurrentUser = () => {
+    return new Promise((resolve, reject) => {
+        const unsubscribe = onAuthStateChanged(
+            auth,
+            (userAuth) => {
+                unsubscribe();
+                resolve(userAuth);
+            },
+            reject
+        );
+    });
+};

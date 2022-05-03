@@ -1,15 +1,19 @@
-import { Fragment, useContext } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Fragment } from 'react';
+import { Outlet } from 'react-router-dom';
+
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCurrentUser } from '../../store/user/user.selector'
 
 import { ReactComponent as CrwnLogo } from '../../assets/crown.svg';
 
 import CartIcon from '../../components/cart-icon/cart-icon.component';
 import CartDropdown from '../../components/cart-dropdown/cart-dropdown.component';
 
-import { UserContext } from '../../context/user.context';
-import { CartContext } from '../../context/cart.context';
+import { selectIsCartOpen } from '../../store/cart/cart.selector';
 
-import { signOutUser } from '../../utils/firebase/firebase.utils';
+import { setIsCartOpen } from '../../store/cart/cart.action';
+
+import { signOutStart } from '../../store/user/user.action';
 
 import { 
     NavigationContainer, 
@@ -19,10 +23,13 @@ import {
 } from './navbar-item.styles.jsx';
 
 const NavBar = () => {
-    const { currentUser } = useContext(UserContext);
-    const { cart, setCart } = useContext(CartContext);
+    const dispatch = useDispatch();
 
-    const exitCartDropdownMenu = () => setCart(false);
+    const currentUser = useSelector(selectCurrentUser);
+    const isCartOpen = useSelector(selectIsCartOpen);
+
+    const exitCartDropdownMenu = () => dispatch(setIsCartOpen(false));
+    const signOutUserDispatch = () => dispatch(signOutStart());
 
     return (
         <Fragment>
@@ -35,14 +42,14 @@ const NavBar = () => {
                     <NavigationLink to='/contact' onClick={exitCartDropdownMenu}>Contact</NavigationLink>
                     {
                         currentUser ? (
-                            <NavigationLink as='span' onClick={signOutUser}>Sign Out</NavigationLink>
+                            <NavigationLink as='span' onClick={signOutUserDispatch}>Sign Out</NavigationLink>
                         ) : (
                             <NavigationLink to='/sign-in' onClick={exitCartDropdownMenu}>Sign In</NavigationLink>
                         )
                     }
                     <CartIcon />
                 </NavigationLinks>
-                { cart && <CartDropdown /> }
+                { isCartOpen && <CartDropdown /> }
             </NavigationContainer>
             <Outlet />
         </Fragment>
